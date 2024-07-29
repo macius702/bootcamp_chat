@@ -1,16 +1,31 @@
-<script setup>
+<script lang="ts">
 import { ref } from 'vue';
-import { bootcamp_chat_backend } from 'declarations/bootcamp_chat_backend/index';
-let greeting = ref('');
+import { bootcamp_chat_backend } from '../../declarations/bootcamp_chat_backend/index';
 
-async function handleSubmit(e) {
-  e.preventDefault();
-  const target = e.target;
-  const name = target.querySelector('#name').value;
-  await bootcamp_chat_backend.greet(name).then((response) => {
-    greeting.value = response;
-  });
-}
+
+
+export default {
+  data() {
+    return {
+      newNote:"",
+      notes : [] as string[]
+    };
+  },
+  methods:
+  {
+    async dodajNotatke(){
+      console.log("dodajNotatke");
+      await bootcamp_chat_backend.add_note( this.newNote );
+    },
+    async pobierzNotatki(){
+      console.log("pobierzNotatki");
+      this.notes = await bootcamp_chat_backend.get_notes();
+
+    },
+
+    mounted()    {  this.pobierzNotatki();}
+  }
+};
 </script>
 
 <template>
@@ -18,11 +33,11 @@ async function handleSubmit(e) {
     <img src="/logo2.svg" alt="DFINITY logo" />
     <br />
     <br />
-    <form action="#" @submit="handleSubmit">
-      <label for="name">Enter your name: &nbsp;</label>
-      <input id="name" alt="Name" type="text" />
-      <button type="submit">Click Me!</button>
-    </form>
-    <section id="greeting">{{ greeting }}</section>
+    <div>
+    {{ notes }}
+  </div>
+  <div>
+    <textarea v-model="newNote" placeholder="Type your message here">Dodaj notatkę</textarea>
+  </div>
   </main>
 </template>
