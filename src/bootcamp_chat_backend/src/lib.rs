@@ -1,4 +1,4 @@
-use std::{cell::{Ref, RefCell}, collections::HashMap};
+use std::{cell:: RefCell, collections::HashMap};
 
 use candid::Principal;
 use ic_cdk::caller;
@@ -9,10 +9,8 @@ thread_local! {
 }
 
 #[ic_cdk::query]
-fn get_chat(user1: Principal, user2: Principal) -> Option<Vec<String>> {
-    let mut principals = [user1, user2];
-    principals.sort();
-    CHAT.with_borrow(|chats|  chats.get(&principals).cloned())
+fn get_chat(chat_path: [Principal; 2]) -> Option<Vec<String>> {
+    CHAT.with_borrow(|chats|  chats.get(&chat_path).cloned())
 }
 
 #[ic_cdk::update]
