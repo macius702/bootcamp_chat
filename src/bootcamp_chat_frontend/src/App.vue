@@ -13,7 +13,8 @@ export default {
       chats: [] as string[][],
       identity: undefined as undefined | Identity,
       principal: undefined as undefined | Principal,
-      targetPrincipal:"",
+      targetPrincipal: "",
+      userData: undefined as undefined | UserData
     }
   },
   methods: {
@@ -23,21 +24,21 @@ export default {
       }
       return {
         identity: this.identity,
-        principal: this.principal 
+        principal: this.principal
       }
     },
-    validateTargetPrincipal(){
+    validateTargetPrincipal() {
       const cleanTargetPrincipal = this.targetPrincipal.trim();
-      if (cleanTargetPrincipal === ""){
+      if (cleanTargetPrincipal === "") {
         throw new Error("No principal")
       }
       const targetPrincipal = Principal.fromText(cleanTargetPrincipal)
-      if(!targetPrincipal || targetPrincipal === Principal.anonymous()){
+      if (!targetPrincipal || targetPrincipal === Principal.anonymous()) {
         throw new Error("Wrong target")
       }
       return targetPrincipal
     },
-    getAuthClient(){
+    getAuthClient() {
       this.isUserLogged()
       return createActor(canisterId, {
         agentOptions: {
@@ -52,7 +53,7 @@ export default {
       await this.pobierzChaty()
     },
     async pobierzChaty() {
-      const {identity, principal} = this.isUserLogged()
+      const { identity, principal } = this.isUserLogged()
       const targetPrincipal = this.validateTargetPrincipal()
 
       const chatPath = [targetPrincipal, identity.getPrincipal()].sort()
@@ -63,14 +64,31 @@ export default {
       await authClient.login({
         identityProvider: "http://be2us-64aaa-aaaaa-qaabq-cai.localhost:4943/",
         onSuccess: async () => {
-      const identity = authClient.getIdentity();
-          this.principal = identity.getPrincipal();
-      this.identity = identity;
+          const identity = authClient.getIdentity();
+          const principal = identity.getPrincipal();
+          this.principal = principal;
+          this.identity = identity;
           console.log("Zalogowano", this.principal)
-      await this.pobierzChaty()
-    }
+          const maybeUserData = await bootcamp_chat_backend.get_user(principal)
+          if (maybeUserData.length === 0) {
+            this.userData = undefined
+          } else {
+            this.userData = maybeUserData[0]
+          }
+        }
       })
-    }
+    },
+    async logout() {
+    const authClient = await AuthClient.create();
+    await authClient.logout();
+    this.principal = undefined;
+    this.identity = undefined;
+    this.chats = [];
+    this.userData = undefined;
+
+  },
+
+
   },
 }
 </script>
@@ -80,13 +98,17 @@ export default {
     <img src="/logo2.svg" alt="DFINITY logo" />
     <br />
     <br />
-    {{ principal }} <button @click="login">login</button>
+    {{ principal }}
+    <button v-if="!principal"  @click="login">login</button>
+    <button v-if="principal"  @click="logout">logout</button>
     <div>
       <input v-model="targetPrincipal" /><button @click="pobierzChaty">pobierz chat</button>
     </div>
-    <div>
-      <div v-for="chat in chats[0]">
-        {{ chat }}
+    <div v-if="principal">
+      <div>
+        <div v-for="chat in chats[0]">
+          {{ chat }}
+        </div>
       </div>
     </div>
     <div>

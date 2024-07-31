@@ -12,7 +12,7 @@ thread_local! {
 }
 
 #[ic_cdk::update]
-fn registe(nickname: String) {
+fn register(nickname: String) {
     let user = caller();
 
     if user == Principal::anonymous() {
