@@ -1,16 +1,42 @@
-use std::{cell:: RefCell, collections::HashMap};
+use std::{cell::RefCell, collections::HashMap};
 
 use candid::Principal;
 use ic_cdk::caller;
+use user::UserData;
+
+pub mod user;
 
 thread_local! {
-    static NOTES: RefCell<HashMap<Principal, Vec<String>>> = RefCell::default();
     static CHAT: RefCell<HashMap<[Principal; 2], Vec<String>>> = RefCell::default();
+    static USERS: RefCell<HashMap<Principal, UserData>> = RefCell::default();
+}
+
+#[ic_cdk::update]
+fn registe(nickname: String) {
+    let user = caller();
+
+    if user == Principal::anonymous() {
+        panic!("Anonymous Principal!, PLZ login with Internet Identity")
+    }
+
+    USERS.with_borrow_mut(|users| {
+        users.insert(user, UserData::new(nickname));
+    })
+}
+
+#[ic_cdk::query]
+fn get_users() -> HashMap<Principal, UserData> {
+    USERS.with_borrow(|users| users.clone())
+}
+
+#[ic_cdk::query]
+fn get_user(user: Principal) -> Option<UserData> {
+    USERS.with_borrow(|users| users.get(&user).cloned())
 }
 
 #[ic_cdk::query]
 fn get_chat(chat_path: [Principal; 2]) -> Option<Vec<String>> {
-    CHAT.with_borrow(|chats|  chats.get(&chat_path).cloned())
+    CHAT.with_borrow(|chats| chats.get(&chat_path).cloned())
 }
 
 #[ic_cdk::update]
@@ -21,9 +47,14 @@ fn add_chat_msg(msg: String, user2: Principal) {
         panic!("Anonymous Principal!")
     }
 
+    let is_user_registered = USERS.with_borrow(|users| users.contains_key(&user1));
+
+    if !is_user_registered {
+        panic!("User not registered!")
+    }
+
     let mut principals = [user1, user2];
     principals.sort();
-
 
     CHAT.with_borrow_mut(|chats| {
         let mut_chat = chats.get_mut(&principals);
@@ -32,30 +63,6 @@ fn add_chat_msg(msg: String, user2: Principal) {
             chat_msgs.push(msg);
         } else {
             chats.insert(principals, vec![msg]);
-        }
-    })
-}
-
-#[ic_cdk::query]
-fn get_notes(user: Principal) -> Option<Vec<String>> {
-    NOTES.with_borrow(|notes|  notes.get(&user).cloned())
-}
-
-#[ic_cdk::update]
-fn add_note(note: String) {
-    let user = caller();
-
-    if user == Principal::anonymous() {
-        panic!("Anonymous Principal!")
-    }
-
-    NOTES.with_borrow_mut(|notes| {
-        let mut_notes = notes.get_mut(&user);
-
-        if let Some(notes_vec) = mut_notes {
-            notes_vec.push(note);
-        } else {
-            notes.insert(user, vec![note]);
         }
     })
 }
