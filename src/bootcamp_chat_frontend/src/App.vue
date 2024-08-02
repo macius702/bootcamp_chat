@@ -74,7 +74,9 @@ export default {
       console.log("After calling AuthClient.create")
       console.log("Before calling login")
       await authClient.login({
-        identityProvider: "http://be2us-64aaa-aaaaa-qaabq-cai.localhost:4943/",
+        //identityProvider: "http://be2us-64aaa-aaaaa-qaabq-cai.localhost:4943/",
+        identityProvider: "http://b77ix-eeaaa-aaaaa-qaada-cai.localhost:4943/",
+        
         onSuccess: async () => {
           console.log("Before calling getIdentity in onSuccess")
           const identity = authClient.getIdentity();
